@@ -83,7 +83,17 @@
   }
   .brand-logo svg { width: 26px; height: 26px; color: white; }
   .brand-text h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.2px; }
-  .brand-text p { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); }
+  .brand-text p { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .cloud-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 999px; border: 1px solid;
+  }
+  .cloud-status.online { color: var(--success); border-color: rgba(16,217,122,0.5); background: rgba(16,217,122,0.12); }
+  .cloud-status.offline { color: var(--warning); border-color: rgba(255,181,71,0.5); background: rgba(255,181,71,0.12); }
+  .cloud-status.error { color: var(--danger); border-color: rgba(255,92,122,0.5); background: rgba(255,92,122,0.12); }
+  .cloud-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
   .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
@@ -97,6 +107,7 @@
   }
   .btn:hover { transform: translateY(-1px); }
   .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
   .btn-primary {
     background: linear-gradient(135deg, var(--accent), #5b3fd8);
     box-shadow: 0 8px 22px rgba(124, 92, 255, 0.4);
@@ -254,6 +265,16 @@
   .empty-state svg { width: 64px; height: 64px; opacity: 0.5; margin-bottom: 12px; }
   .empty-state h3 { margin: 0 0 6px; color: var(--text); }
 
+  .loading-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .spinner {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .modal-overlay {
     position: fixed; inset: 0; z-index: 50;
     background: rgba(8, 12, 30, 0.6);
@@ -328,6 +349,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     z-index: 100; transition: transform 0.3s ease;
     display: flex; align-items: center; gap: 10px;
+    max-width: 90vw;
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
   .toast.success { border-color: rgba(16,217,122,0.5); }
@@ -370,7 +392,13 @@
       </div>
       <div class="brand-text">
         <h1>إدارة ضمانات الأجهزة</h1>
-        <p>تتبع ضمانات الكمبيوتر واللاب توب والرامات والطابعات</p>
+        <p>
+          <span>تتبع ضمانات الكمبيوتر واللاب توب والرامات والطابعات</span>
+          <span class="cloud-status offline" id="cloudStatus">
+            <span class="dot"></span>
+            <span id="cloudStatusText">جاري الاتصال...</span>
+          </span>
+        </p>
       </div>
     </div>
     <div class="header-actions">
@@ -424,7 +452,12 @@
     </div>
   </div>
 
-  <div id="devicesContainer"></div>
+  <div id="devicesContainer">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>جاري تحميل البيانات من السحابة...</p>
+    </div>
+  </div>
 
 </div>
 
@@ -479,22 +512,52 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-  // ====== Data Layer ======
-  const STORAGE_KEY = 'warranty_devices_v1';
+<script type="module">
+  // ========================================
+  //  Firebase Setup
+  // ========================================
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import {
+    getFirestore, collection, onSnapshot, addDoc, updateDoc,
+    deleteDoc, doc, query, orderBy, serverTimestamp,
+    enableIndexedDbPersistence, writeBatch
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
-  const loadDevices = () => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-    catch { return []; }
+  const firebaseConfig = {
+    apiKey: "AIzaSyBxBszxhxLVX6_5svbs_-YwQplPEmyKcs4",
+    authDomain: "guarantee-management.firebaseapp.com",
+    projectId: "guarantee-management",
+    storageBucket: "guarantee-management.firebasestorage.app",
+    messagingSenderId: "67321013001",
+    appId: "1:67321013001:web:098eefca33bda972a4e9d8",
+    measurementId: "G-HNZG8DRFGC"
   };
-  const saveDevices = (list) => localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 
-  let devices = loadDevices();
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+  const devicesCol = collection(db, "devices");
+
+  // Enable offline persistence (data will be cached locally for offline use)
+  try {
+    await enableIndexedDbPersistence(db);
+  } catch (err) {
+    // Persistence may fail in multiple tabs / unsupported browsers — non-fatal
+  }
+
+  // ========================================
+  //  State
+  // ========================================
+  let devices = [];
   let currentFilter = 'all';
   let currentSearch = '';
   let editingId = null;
+  let isLoading = true;
 
-  // ====== Helpers ======
+  // ========================================
+  //  Helpers
+  // ========================================
+  const $ = (sel) => document.querySelector(sel);
+
   const fmtDate = (iso) => {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -507,7 +570,9 @@
     if (days <= 30) return { key: 'soon', label: `ينتهي خلال ${days} يوم`, days };
     return { key: 'active', label: `ساري (${days} يوم متبقي)`, days };
   };
-  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const escapeHtml = (str) => String(str ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
 
   const deviceIcons = {
     laptop: '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/>',
@@ -523,8 +588,21 @@
     printer: 'طابعة', tablet: 'تابلت', phone: 'هاتف', other: 'أخرى'
   };
 
-  // ====== Render ======
-  const $ = (sel) => document.querySelector(sel);
+  // ========================================
+  //  Cloud status indicator
+  // ========================================
+  const setCloudStatus = (state, text) => {
+    const el = $('#cloudStatus');
+    el.className = `cloud-status ${state}`;
+    $('#cloudStatusText').textContent = text;
+  };
+
+  window.addEventListener('online', () => setCloudStatus('online', 'متصل بالسحابة'));
+  window.addEventListener('offline', () => setCloudStatus('offline', 'غير متصل (يعمل محلياً)'));
+
+  // ========================================
+  //  Render
+  // ========================================
   const container = $('#devicesContainer');
 
   const renderStats = () => {
@@ -542,6 +620,8 @@
   };
 
   const renderDevices = () => {
+    if (isLoading) return;
+
     const filtered = devices.filter(d => {
       const status = warrantyStatus(d.warrantyEnd).key;
       if (currentFilter !== 'all' && status !== currentFilter) return false;
@@ -593,11 +673,11 @@
             <div class="meta-row"><span class="meta-label">موظف المشتريات</span><span class="meta-value">${escapeHtml(d.employee)}</span></div>
           </div>
           <div class="device-actions">
-            <button class="icon-btn" onclick="editDevice('${d.id}')">
+            <button class="icon-btn" data-edit="${d.id}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               تعديل
             </button>
-            <button class="icon-btn danger" onclick="deleteDevice('${d.id}')">
+            <button class="icon-btn danger" data-delete="${d.id}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
               حذف
             </button>
@@ -607,13 +687,11 @@
     container.innerHTML = html;
   };
 
-  const escapeHtml = (str) => String(str ?? '').replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
-
   const renderAll = () => { renderStats(); renderDevices(); };
 
-  // ====== Modal ======
+  // ========================================
+  //  Modal
+  // ========================================
   const openModal = (device = null) => {
     editingId = device ? device.id : null;
     $('#modalTitle').textContent = device ? 'تعديل بيانات الجهاز' : 'إضافة جهاز جديد';
@@ -629,58 +707,107 @@
   };
   const closeModal = () => { $('#modalOverlay').classList.remove('show'); editingId = null; };
 
-  // ====== Toast ======
+  // ========================================
+  //  Toast
+  // ========================================
   const showToast = (msg, type = 'success') => {
     const el = $('#toast');
     el.textContent = msg;
     el.className = `toast ${type} show`;
-    setTimeout(() => el.classList.remove('show'), 2400);
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2800);
   };
 
-  // ====== CRUD ======
-  window.editDevice = (id) => {
-    const d = devices.find(x => x.id === id);
-    if (d) openModal(d);
-  };
-  window.deleteDevice = (id) => {
-    const d = devices.find(x => x.id === id);
-    if (!d) return;
-    if (!confirm(`هل تريد حذف الجهاز "${d.name}"؟`)) return;
-    devices = devices.filter(x => x.id !== id);
-    saveDevices(devices);
-    renderAll();
-    showToast('تم حذف الجهاز', 'success');
-  };
+  // ========================================
+  //  Firestore CRUD
+  // ========================================
+  const liveQuery = query(devicesCol, orderBy('createdAt', 'desc'));
+  onSnapshot(
+    liveQuery,
+    (snapshot) => {
+      devices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      isLoading = false;
+      const fromCache = snapshot.metadata.fromCache;
+      setCloudStatus(fromCache ? 'offline' : 'online', fromCache ? 'يعمل محلياً (بدون إنترنت)' : 'متصل بالسحابة');
+      renderAll();
+    },
+    (err) => {
+      console.error(err);
+      isLoading = false;
+      setCloudStatus('error', 'خطأ في الاتصال');
+      container.innerHTML = `
+        <div class="empty-state">
+          <h3 style="color:var(--danger)">تعذّر الاتصال بقاعدة البيانات</h3>
+          <p>${escapeHtml(err.message || '')}</p>
+          <p style="margin-top:12px">تأكد من تفعيل Firestore Database من لوحة تحكم Firebase.</p>
+        </div>`;
+    }
+  );
 
-  $('#deviceForm').addEventListener('submit', (e) => {
+  // ========================================
+  //  Form submit
+  // ========================================
+  $('#deviceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = {
-      id: editingId || uid(),
       name: $('#deviceName').value.trim(),
       type: $('#deviceType').value,
       company: $('#companyName').value.trim(),
       purchaseDate: $('#purchaseDate').value,
       warrantyEnd: $('#warrantyEnd').value,
       employee: $('#employeeName').value.trim(),
-      updatedAt: new Date().toISOString()
+      updatedAt: serverTimestamp()
     };
     if (new Date(data.warrantyEnd) < new Date(data.purchaseDate)) {
       showToast('تاريخ انتهاء الضمان يجب أن يكون بعد تاريخ الشراء', 'error');
       return;
     }
-    if (editingId) {
-      devices = devices.map(d => d.id === editingId ? { ...d, ...data } : d);
-      showToast('تم تحديث بيانات الجهاز', 'success');
-    } else {
-      devices.unshift(data);
-      showToast('تمت إضافة الجهاز بنجاح', 'success');
+
+    const saveBtn = $('#saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'جاري الحفظ...';
+
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, 'devices', editingId), data);
+        showToast('تم تحديث بيانات الجهاز ☁️', 'success');
+      } else {
+        data.createdAt = serverTimestamp();
+        await addDoc(devicesCol, data);
+        showToast('تمت إضافة الجهاز وحفظه على السحابة ☁️', 'success');
+      }
+      closeModal();
+    } catch (err) {
+      showToast('خطأ في الحفظ: ' + err.message, 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'حفظ';
     }
-    saveDevices(devices);
-    renderAll();
-    closeModal();
   });
 
-  // ====== Events ======
+  // Event delegation for edit/delete buttons
+  container.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('[data-edit]');
+    const delBtn = e.target.closest('[data-delete]');
+    if (editBtn) {
+      const d = devices.find(x => x.id === editBtn.dataset.edit);
+      if (d) openModal(d);
+    } else if (delBtn) {
+      const d = devices.find(x => x.id === delBtn.dataset.delete);
+      if (!d) return;
+      if (!confirm(`هل تريد حذف الجهاز "${d.name}"؟`)) return;
+      try {
+        await deleteDoc(doc(db, 'devices', d.id));
+        showToast('تم حذف الجهاز', 'success');
+      } catch (err) {
+        showToast('فشل الحذف: ' + err.message, 'error');
+      }
+    }
+  });
+
+  // ========================================
+  //  Toolbar Events
+  // ========================================
   $('#addBtn').addEventListener('click', () => openModal());
   $('#modalClose').addEventListener('click', closeModal);
   $('#cancelBtn').addEventListener('click', closeModal);
@@ -704,9 +831,12 @@
     renderDevices();
   });
 
-  // Export / Import
+  // ========================================
+  //  Export / Import (cloud-aware)
+  // ========================================
   $('#exportBtn').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(devices, null, 2)], { type: 'application/json' });
+    const exportData = devices.map(({ id, ...rest }) => rest);
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -715,28 +845,37 @@
     URL.revokeObjectURL(url);
     showToast('تم تصدير البيانات', 'success');
   });
+
   $('#importBtn').addEventListener('click', () => $('#importInput').click());
-  $('#importInput').addEventListener('change', (e) => {
+  $('#importInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const imported = JSON.parse(ev.target.result);
-        if (!Array.isArray(imported)) throw new Error();
-        devices = imported.map(d => ({ ...d, id: d.id || uid() }));
-        saveDevices(devices);
-        renderAll();
-        showToast(`تم استيراد ${devices.length} جهاز`, 'success');
-      } catch {
-        showToast('ملف غير صالح', 'error');
+    try {
+      const text = await file.text();
+      const imported = JSON.parse(text);
+      if (!Array.isArray(imported)) throw new Error('صيغة الملف غير صحيحة');
+      if (!confirm(`سيتم رفع ${imported.length} جهاز إلى السحابة. هل تريد المتابعة؟`)) {
+        e.target.value = '';
+        return;
       }
-      e.target.value = '';
-    };
-    reader.readAsText(file);
+      showToast('جاري الرفع إلى السحابة...', 'success');
+      const batch = writeBatch(db);
+      imported.forEach((d) => {
+        const ref = doc(devicesCol);
+        const { id, createdAt, updatedAt, ...rest } = d;
+        batch.set(ref, { ...rest, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      });
+      await batch.commit();
+      showToast(`تم استيراد ${imported.length} جهاز ☁️`, 'success');
+    } catch (err) {
+      showToast('ملف غير صالح: ' + err.message, 'error');
+    }
+    e.target.value = '';
   });
 
-  // ====== PWA Install ======
+  // ========================================
+  //  PWA Install
+  // ========================================
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -761,9 +900,6 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     });
   }
-
-  // Initial render
-  renderAll();
 </script>
 </body>
 </html>

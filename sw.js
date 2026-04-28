@@ -1,4 +1,4 @@
-const CACHE = 'warranty-app-v1';
+const CACHE = 'warranty-app-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -23,6 +23,22 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Never cache Firebase / Firestore / Google API requests — let them go through
+  // (Firestore handles its own offline persistence via IndexedDB)
+  const skipHosts = [
+    'firestore.googleapis.com',
+    'firebaseinstallations.googleapis.com',
+    'identitytoolkit.googleapis.com',
+    'firebase.googleapis.com',
+    'googleapis.com',
+    'gstatic.com',
+    'google-analytics.com'
+  ];
+  if (skipHosts.some(h => url.hostname.includes(h))) return;
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
