@@ -61,6 +61,7 @@
     z-index: 0;
   }
   .container { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .hidden { display: none !important; }
 
   header.app-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -95,7 +96,22 @@
   .cloud-status.error { color: var(--danger); border-color: rgba(255,92,122,0.5); background: rgba(255,92,122,0.12); }
   .cloud-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-  .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .user-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border);
+    padding: 8px 12px; border-radius: 12px;
+    font-size: 13px; font-weight: 700;
+  }
+  .user-chip .role-tag {
+    font-size: 10px; font-weight: 800; padding: 2px 8px;
+    border-radius: 999px; text-transform: uppercase;
+  }
+  .role-admin { background: rgba(124,92,255,0.25); color: #b9a6ff; border: 1px solid rgba(124,92,255,0.5); }
+  .role-editor { background: rgba(0,212,255,0.2); color: #80e6ff; border: 1px solid rgba(0,212,255,0.5); }
+  .role-viewer { background: rgba(255,255,255,0.1); color: var(--text-muted); border: 1px solid var(--glass-border); }
 
   .btn {
     appearance: none; border: none; cursor: pointer;
@@ -123,6 +139,35 @@
   }
   .btn svg { width: 18px; height: 18px; }
 
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 6px; margin-bottom: 18px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 6px;
+    box-shadow: var(--shadow);
+    width: fit-content;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    appearance: none; border: none; cursor: pointer;
+    background: transparent; color: var(--text-muted);
+    padding: 10px 18px; border-radius: 12px;
+    font-family: inherit; font-size: 14px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--accent), #5b3fd8);
+    color: white; box-shadow: 0 4px 14px rgba(124,92,255,0.4);
+  }
+  .tab-btn svg { width: 16px; height: 16px; }
+
   .stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -139,12 +184,6 @@
     box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
-  }
-  .stat-card::after {
-    content: ""; position: absolute; top: -40px; left: -40px;
-    width: 120px; height: 120px; border-radius: 50%;
-    background: var(--g, radial-gradient(circle, rgba(124,92,255,0.25), transparent 70%));
-    pointer-events: none;
   }
   .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
   .stat-value { font-size: 30px; font-weight: 800; }
@@ -204,7 +243,6 @@
     border-radius: var(--radius);
     padding: 18px;
     box-shadow: var(--shadow);
-    position: relative;
     transition: transform 0.2s ease, border-color 0.2s ease;
   }
   .device-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.28); }
@@ -249,8 +287,9 @@
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     transition: background 0.15s, border-color 0.15s;
   }
-  .icon-btn:hover { background: rgba(255,255,255,0.12); }
-  .icon-btn.danger:hover { background: rgba(255,92,122,0.18); border-color: rgba(255,92,122,0.5); color: var(--danger); }
+  .icon-btn:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+  .icon-btn.danger:hover:not(:disabled) { background: rgba(255,92,122,0.18); border-color: rgba(255,92,122,0.5); color: var(--danger); }
+  .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .icon-btn svg { width: 14px; height: 14px; }
 
   .empty-state {
@@ -275,6 +314,7 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* Modal */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 50;
     background: rgba(8, 12, 30, 0.6);
@@ -301,10 +341,7 @@
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
-  .modal-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 18px;
-  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .modal-title { font-size: 19px; font-weight: 800; margin: 0; }
   .modal-close {
     background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border);
@@ -330,6 +367,9 @@
   .form-field input:focus, .form-field select:focus {
     border-color: var(--accent); background: rgba(255,255,255,0.1);
   }
+  .form-field .hint {
+    font-size: 12px; color: var(--text-dim); margin-top: 6px;
+  }
   .form-actions {
     display: flex; gap: 10px; justify-content: flex-start;
     margin-top: 18px;
@@ -347,7 +387,7 @@
     padding: 12px 22px; border-radius: 12px;
     font-weight: 600; font-size: 14px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    z-index: 100; transition: transform 0.3s ease;
+    z-index: 200; transition: transform 0.3s ease;
     display: flex; align-items: center; gap: 10px;
     max-width: 90vw;
   }
@@ -368,19 +408,139 @@
   .install-banner.show { display: flex; }
   .install-banner p { margin: 0; font-size: 14px; }
 
+  /* Login screen */
+  .login-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    background:
+      radial-gradient(800px 600px at 20% 20%, rgba(124, 92, 255, 0.5), transparent 60%),
+      radial-gradient(700px 500px at 80% 80%, rgba(0, 212, 255, 0.4), transparent 60%),
+      linear-gradient(135deg, var(--bg-1), var(--bg-2) 60%, var(--bg-3));
+  }
+  .login-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 36px 30px;
+    max-width: 420px; width: 100%;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    animation: slideUp 0.4s ease;
+  }
+  .login-logo {
+    width: 72px; height: 72px; margin: 0 auto 18px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    box-shadow: 0 12px 32px rgba(124,92,255,0.5);
+  }
+  .login-logo svg { width: 38px; height: 38px; color: white; }
+  .login-card h2 { text-align: center; margin: 0 0 6px; font-size: 22px; font-weight: 800; }
+  .login-card .subtitle { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
+  .login-error {
+    background: rgba(255,92,122,0.15);
+    border: 1px solid rgba(255,92,122,0.4);
+    color: var(--danger);
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .login-error.show { display: block; }
+  .login-card .btn-primary { width: 100%; justify-content: center; padding: 13px; margin-top: 8px; font-size: 15px; }
+  .login-hint {
+    margin-top: 18px; padding: 12px; border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed var(--glass-border);
+    text-align: center; font-size: 12px; color: var(--text-muted);
+  }
+
+  /* Users page */
+  .users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .user-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .user-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    font-size: 22px; font-weight: 800; color: white;
+    box-shadow: 0 6px 18px rgba(124,92,255,0.35);
+  }
+  .user-card-head { display: flex; align-items: center; gap: 12px; }
+  .user-card h3 { margin: 0; font-size: 16px; font-weight: 700; }
+  .user-card .user-email { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .perm-list {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+  }
+  .perm-tag {
+    font-size: 11px; font-weight: 700;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--glass-border);
+    padding: 4px 9px; border-radius: 999px;
+    color: var(--text-muted);
+  }
+  .perm-tag.on { color: var(--success); border-color: rgba(16,217,122,0.4); background: rgba(16,217,122,0.1); }
+
   @media (max-width: 600px) {
     .container { padding: 14px; }
     header.app-header { padding: 14px 16px; }
     .brand-text h1 { font-size: 17px; }
     .brand-text p { font-size: 12px; }
     .stat-value { font-size: 24px; }
-    .header-actions .btn span { display: none; }
+    .header-actions .btn span:not(.role-tag) { display: none; }
     .header-actions .btn { padding: 11px 13px; }
+    .login-card { padding: 28px 22px; }
   }
 </style>
 </head>
 <body>
-<div class="container">
+
+<!-- ============== LOGIN OVERLAY ============== -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5l-8-3z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <h2>إدارة ضمانات الأجهزة</h2>
+    <p class="subtitle">سجّل الدخول للمتابعة</p>
+    <div class="login-error" id="loginError"></div>
+    <form id="loginForm" class="form-grid">
+      <div class="form-field">
+        <label for="loginUsername">اسم المستخدم</label>
+        <input type="text" id="loginUsername" required autocomplete="username" placeholder="admin" />
+      </div>
+      <div class="form-field">
+        <label for="loginPassword">كلمة المرور</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <button type="submit" class="btn btn-primary" id="loginBtn">دخول</button>
+    </form>
+    <div class="login-hint">
+      أول استخدام؟ سجّل بحساب الأدمن:<br>
+      <strong>admin / admin123</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ============== APP CONTAINER ============== -->
+<div class="container hidden" id="appContainer">
 
   <header class="app-header">
     <div class="brand">
@@ -393,7 +553,6 @@
       <div class="brand-text">
         <h1>إدارة ضمانات الأجهزة</h1>
         <p>
-          <span>تتبع ضمانات الكمبيوتر واللاب توب والرامات والطابعات</span>
           <span class="cloud-status offline" id="cloudStatus">
             <span class="dot"></span>
             <span id="cloudStatusText">جاري الاتصال...</span>
@@ -402,18 +561,14 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn btn-ghost" id="exportBtn" title="تصدير البيانات">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <span>تصدير</span>
-      </button>
-      <button class="btn btn-ghost" id="importBtn" title="استيراد البيانات">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <span>استيراد</span>
-      </button>
-      <input type="file" id="importInput" accept="application/json" hidden />
-      <button class="btn btn-primary" id="addBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>إضافة جهاز</span>
+      <span class="user-chip" id="userChip">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="userName">—</span>
+        <span class="role-tag role-viewer" id="userRole">viewer</span>
+      </span>
+      <button class="btn btn-ghost" id="logoutBtn" title="تسجيل الخروج">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>خروج</span>
       </button>
     </div>
   </header>
@@ -423,45 +578,96 @@
     <button class="btn btn-primary" id="installBtn">تثبيت التطبيق</button>
   </div>
 
-  <section class="stats">
-    <div class="stat-card total">
-      <div class="stat-label">إجمالي الأجهزة</div>
-      <div class="stat-value" id="statTotal">0</div>
-    </div>
-    <div class="stat-card active">
-      <div class="stat-label">ضمان ساري</div>
-      <div class="stat-value" id="statActive">0</div>
-    </div>
-    <div class="stat-card soon">
-      <div class="stat-label">قارب على الانتهاء</div>
-      <div class="stat-value" id="statSoon">0</div>
-    </div>
-    <div class="stat-card expired">
-      <div class="stat-label">منتهي الضمان</div>
-      <div class="stat-value" id="statExpired">0</div>
-    </div>
-  </section>
+  <!-- Tabs -->
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="devices">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      الأجهزة
+    </button>
+    <button class="tab-btn hidden" data-tab="users" id="usersTabBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      المستخدمون
+    </button>
+  </div>
 
-  <div class="toolbar">
-    <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن جهاز، شركة، موظف..." />
-    <div class="filter-group" id="filterGroup">
-      <button class="chip active" data-filter="all">الكل</button>
-      <button class="chip" data-filter="active">ساري</button>
-      <button class="chip" data-filter="soon">قارب على الانتهاء</button>
-      <button class="chip" data-filter="expired">منتهي</button>
+  <!-- ============== DEVICES TAB ============== -->
+  <div id="devicesTab">
+    <div style="display:flex; justify-content:flex-end; margin-bottom: 16px; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-ghost" id="exportBtn" title="تصدير البيانات">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>تصدير</span>
+      </button>
+      <button class="btn btn-ghost hidden" id="importBtn" title="استيراد البيانات">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>استيراد</span>
+      </button>
+      <input type="file" id="importInput" accept="application/json" hidden />
+      <button class="btn btn-primary hidden" id="addBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>إضافة جهاز</span>
+      </button>
+    </div>
+
+    <section class="stats">
+      <div class="stat-card total">
+        <div class="stat-label">إجمالي الأجهزة</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card active">
+        <div class="stat-label">ضمان ساري</div>
+        <div class="stat-value" id="statActive">0</div>
+      </div>
+      <div class="stat-card soon">
+        <div class="stat-label">قارب على الانتهاء</div>
+        <div class="stat-value" id="statSoon">0</div>
+      </div>
+      <div class="stat-card expired">
+        <div class="stat-label">منتهي الضمان</div>
+        <div class="stat-value" id="statExpired">0</div>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن جهاز، شركة، موظف..." />
+      <div class="filter-group" id="filterGroup">
+        <button class="chip active" data-filter="all">الكل</button>
+        <button class="chip" data-filter="active">ساري</button>
+        <button class="chip" data-filter="soon">قارب على الانتهاء</button>
+        <button class="chip" data-filter="expired">منتهي</button>
+      </div>
+    </div>
+
+    <div id="devicesContainer">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>جاري تحميل البيانات من السحابة...</p>
+      </div>
     </div>
   </div>
 
-  <div id="devicesContainer">
-    <div class="loading-state">
-      <div class="spinner"></div>
-      <p>جاري تحميل البيانات من السحابة...</p>
+  <!-- ============== USERS TAB ============== -->
+  <div id="usersTab" class="hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; gap:10px; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0; font-size: 22px;">إدارة المستخدمين والصلاحيات</h2>
+        <p style="margin: 4px 0 0; font-size: 13px; color: var(--text-muted);">إضافة مستخدمين جدد وتحديد صلاحياتهم — يتم التسجيل تلقائياً في Firebase</p>
+      </div>
+      <button class="btn btn-primary" id="addUserBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        <span>إضافة مستخدم</span>
+      </button>
+    </div>
+    <div id="usersContainer">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>جاري تحميل المستخدمين...</p>
+      </div>
     </div>
   </div>
 
 </div>
 
-<!-- Modal -->
+<!-- ============== DEVICE MODAL ============== -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <div class="modal-header">
@@ -510,18 +716,57 @@
   </div>
 </div>
 
+<!-- ============== USER MODAL ============== -->
+<div class="modal-overlay" id="userModalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="userModalTitle">إضافة مستخدم جديد</h2>
+      <button class="modal-close" id="userModalClose">&times;</button>
+    </div>
+    <form id="userForm" class="form-grid">
+      <input type="hidden" id="userEditId" />
+      <div class="form-field">
+        <label for="userUsername">اسم المستخدم <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="userUsername" required placeholder="مثال: ahmed" pattern="[a-zA-Z0-9_.-]+" />
+        <div class="hint">حروف لاتينية وأرقام فقط (سيتم استخدامه لتسجيل الدخول)</div>
+      </div>
+      <div class="form-field" id="passwordField">
+        <label for="userPassword">كلمة المرور <span style="color:var(--danger)">*</span></label>
+        <input type="password" id="userPassword" required minlength="6" placeholder="6 أحرف على الأقل" />
+      </div>
+      <div class="form-field">
+        <label for="userRole">الصلاحية <span style="color:var(--danger)">*</span></label>
+        <select id="userRole" required>
+          <option value="viewer">مشاهد — قراءة فقط</option>
+          <option value="editor">محرر — إضافة وتعديل (بدون حذف)</option>
+          <option value="admin">أدمن — صلاحيات كاملة + إدارة المستخدمين</option>
+        </select>
+        <div class="hint">المحرر يمكنه إضافة وتعديل الأجهزة لكن لا يمكنه حذفها أو إدارة المستخدمين</div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" id="userCancelBtn">إلغاء</button>
+        <button type="submit" class="btn btn-primary" id="userSaveBtn">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
   // ========================================
   //  Firebase Setup
   // ========================================
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
   import {
-    getFirestore, collection, onSnapshot, addDoc, updateDoc,
-    deleteDoc, doc, query, orderBy, serverTimestamp,
+    getFirestore, collection, onSnapshot, addDoc, updateDoc, setDoc,
+    deleteDoc, doc, getDoc, getDocs, query, where, orderBy, serverTimestamp,
     enableIndexedDbPersistence, writeBatch
   } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+  import {
+    getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    onAuthStateChanged, signOut, updatePassword
+  } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBxBszxhxLVX6_5svbs_-YwQplPEmyKcs4",
@@ -535,23 +780,32 @@
 
   const fbApp = initializeApp(firebaseConfig);
   const db = getFirestore(fbApp);
+  const auth = getAuth(fbApp);
   const devicesCol = collection(db, "devices");
+  const usersCol = collection(db, "users");
 
-  // Enable offline persistence (data will be cached locally for offline use)
-  try {
-    await enableIndexedDbPersistence(db);
-  } catch (err) {
-    // Persistence may fail in multiple tabs / unsupported browsers — non-fatal
-  }
+  try { await enableIndexedDbPersistence(db); } catch {}
+
+  // We use a virtual email format because Firebase Auth requires emails
+  const USERNAME_DOMAIN = "warranty.local";
+  const usernameToEmail = (username) => `${username.trim().toLowerCase()}@${USERNAME_DOMAIN}`;
+  const emailToUsername = (email) => (email || "").split("@")[0];
 
   // ========================================
   //  State
   // ========================================
   let devices = [];
+  let users = [];
+  let currentUser = null;          // Firebase auth user
+  let currentProfile = null;       // {username, role, ...}
   let currentFilter = 'all';
   let currentSearch = '';
   let editingId = null;
+  let editingUserId = null;
   let isLoading = true;
+  let devicesUnsub = null;
+  let usersUnsub = null;
+  let currentTab = 'devices';
 
   // ========================================
   //  Helpers
@@ -587,23 +841,37 @@
     laptop: 'لاب توب', desktop: 'كمبيوتر مكتبي', ram: 'رامات',
     printer: 'طابعة', tablet: 'تابلت', phone: 'هاتف', other: 'أخرى'
   };
+  const roleLabels = { admin: 'أدمن', editor: 'محرر', viewer: 'مشاهد' };
 
-  // ========================================
-  //  Cloud status indicator
-  // ========================================
+  // Permission helpers — single source of truth
+  const can = {
+    add: () => ['admin', 'editor'].includes(currentProfile?.role),
+    edit: () => ['admin', 'editor'].includes(currentProfile?.role),
+    delete: () => currentProfile?.role === 'admin',
+    manageUsers: () => currentProfile?.role === 'admin',
+    import: () => currentProfile?.role === 'admin'
+  };
+
   const setCloudStatus = (state, text) => {
     const el = $('#cloudStatus');
     el.className = `cloud-status ${state}`;
     $('#cloudStatusText').textContent = text;
   };
-
   window.addEventListener('online', () => setCloudStatus('online', 'متصل بالسحابة'));
   window.addEventListener('offline', () => setCloudStatus('offline', 'غير متصل (يعمل محلياً)'));
 
+  const showToast = (msg, type = 'success') => {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.className = `toast ${type} show`;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 2800);
+  };
+
   // ========================================
-  //  Render
+  //  Render — Devices
   // ========================================
-  const container = $('#devicesContainer');
+  const devicesContainer = $('#devicesContainer');
 
   const renderStats = () => {
     let active = 0, soon = 0, expired = 0;
@@ -635,17 +903,20 @@
     }).sort((a, b) => new Date(a.warrantyEnd) - new Date(b.warrantyEnd));
 
     if (filtered.length === 0) {
-      container.innerHTML = `
+      devicesContainer.innerHTML = `
         <div class="empty-state">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2"/>
             <path d="M9 12h6M9 16h6M9 8h6"/>
           </svg>
           <h3>${devices.length === 0 ? 'لا توجد أجهزة بعد' : 'لا توجد نتائج'}</h3>
-          <p>${devices.length === 0 ? 'ابدأ بإضافة أول جهاز لتتبع الضمان' : 'جرّب تغيير البحث أو الفلتر'}</p>
+          <p>${devices.length === 0 ? (can.add() ? 'ابدأ بإضافة أول جهاز لتتبع الضمان' : 'لا توجد أجهزة في النظام حالياً') : 'جرّب تغيير البحث أو الفلتر'}</p>
         </div>`;
       return;
     }
+
+    const canEdit = can.edit();
+    const canDelete = can.delete();
 
     const html = `<div class="devices-grid">${filtered.map(d => {
       const status = warrantyStatus(d.warrantyEnd);
@@ -671,28 +942,115 @@
             <div class="meta-row"><span class="meta-label">انتهاء الضمان</span><span class="meta-value">${fmtDate(d.warrantyEnd)}</span></div>
             <div class="meta-row"><span class="meta-label">حالة الضمان</span><span class="meta-value" style="color:var(--${status.key === 'active' ? 'success' : status.key === 'soon' ? 'warning' : 'danger'})">${status.label}</span></div>
             <div class="meta-row"><span class="meta-label">موظف المشتريات</span><span class="meta-value">${escapeHtml(d.employee)}</span></div>
+            ${d.createdByUsername ? `<div class="meta-row"><span class="meta-label">أُضيف بواسطة</span><span class="meta-value">${escapeHtml(d.createdByUsername)}</span></div>` : ''}
           </div>
           <div class="device-actions">
-            <button class="icon-btn" data-edit="${d.id}">
+            <button class="icon-btn" data-edit="${d.id}" ${canEdit ? '' : 'disabled title="ليس لديك صلاحية التعديل"'}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               تعديل
             </button>
-            <button class="icon-btn danger" data-delete="${d.id}">
+            <button class="icon-btn danger" data-delete="${d.id}" ${canDelete ? '' : 'disabled title="فقط الأدمن يمكنه الحذف"'}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
               حذف
             </button>
           </div>
         </div>`;
     }).join('')}</div>`;
-    container.innerHTML = html;
+    devicesContainer.innerHTML = html;
   };
 
-  const renderAll = () => { renderStats(); renderDevices(); };
+  // ========================================
+  //  Render — Users
+  // ========================================
+  const usersContainer = $('#usersContainer');
+
+  const renderUsers = () => {
+    if (users.length === 0) {
+      usersContainer.innerHTML = `
+        <div class="empty-state">
+          <h3>لا يوجد مستخدمون</h3>
+          <p>اضغط "إضافة مستخدم" لإضافة أول مستخدم للنظام</p>
+        </div>`;
+      return;
+    }
+
+    const html = `<div class="users-grid">${users.map(u => {
+      const initial = (u.username || '?').charAt(0).toUpperCase();
+      const isCurrentUser = u.id === currentUser?.uid;
+      const perms = [
+        { key: 'إضافة', on: ['admin','editor'].includes(u.role) },
+        { key: 'تعديل', on: ['admin','editor'].includes(u.role) },
+        { key: 'حذف', on: u.role === 'admin' },
+        { key: 'إدارة مستخدمين', on: u.role === 'admin' }
+      ];
+      return `
+        <div class="user-card">
+          <div class="user-card-head">
+            <div class="user-avatar">${escapeHtml(initial)}</div>
+            <div style="flex:1">
+              <h3>${escapeHtml(u.username)} ${isCurrentUser ? '<span style="font-size:11px;color:var(--text-dim);font-weight:600">(أنت)</span>' : ''}</h3>
+              <div class="user-email">${escapeHtml(u.email || '')}</div>
+            </div>
+            <span class="role-tag role-${u.role}">${roleLabels[u.role] || u.role}</span>
+          </div>
+          <div class="perm-list">
+            ${perms.map(p => `<span class="perm-tag ${p.on ? 'on' : ''}">${p.on ? '✓' : '✕'} ${p.key}</span>`).join('')}
+          </div>
+          <div class="device-actions">
+            <button class="icon-btn" data-user-edit="${u.id}" ${isCurrentUser ? 'disabled title="لا يمكنك تعديل صلاحيتك بنفسك"' : ''}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              تعديل الصلاحية
+            </button>
+            <button class="icon-btn danger" data-user-delete="${u.id}" ${isCurrentUser ? 'disabled title="لا يمكنك حذف نفسك"' : ''}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+              حذف
+            </button>
+          </div>
+        </div>`;
+    }).join('')}</div>`;
+    usersContainer.innerHTML = html;
+  };
 
   // ========================================
-  //  Modal
+  //  Apply UI permissions
+  // ========================================
+  const applyPermissionsUI = () => {
+    if (!currentProfile) return;
+    $('#addBtn').classList.toggle('hidden', !can.add());
+    $('#importBtn').classList.toggle('hidden', !can.import());
+    $('#usersTabBtn').classList.toggle('hidden', !can.manageUsers());
+
+    $('#userName').textContent = currentProfile.username;
+    const roleEl = $('#userRole');
+    const roleTag = $('#userChip .role-tag');
+    roleTag.textContent = roleLabels[currentProfile.role] || currentProfile.role;
+    roleTag.className = `role-tag role-${currentProfile.role}`;
+  };
+
+  // ========================================
+  //  Tab switching
+  // ========================================
+  const switchTab = (tab) => {
+    if (tab === 'users' && !can.manageUsers()) return;
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === tab)
+    );
+    $('#devicesTab').classList.toggle('hidden', tab !== 'devices');
+    $('#usersTab').classList.toggle('hidden', tab !== 'users');
+  };
+
+  $('#tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('.tab-btn');
+    if (btn) switchTab(btn.dataset.tab);
+  });
+
+  // ========================================
+  //  Modals
   // ========================================
   const openModal = (device = null) => {
+    if (!can.add() && !device) return;
+    if (device && !can.edit()) return;
     editingId = device ? device.id : null;
     $('#modalTitle').textContent = device ? 'تعديل بيانات الجهاز' : 'إضافة جهاز جديد';
     $('#deviceId').value = device?.id || '';
@@ -707,48 +1065,78 @@
   };
   const closeModal = () => { $('#modalOverlay').classList.remove('show'); editingId = null; };
 
+  const openUserModal = (user = null) => {
+    if (!can.manageUsers()) return;
+    editingUserId = user ? user.id : null;
+    $('#userModalTitle').textContent = user ? 'تعديل صلاحية المستخدم' : 'إضافة مستخدم جديد';
+    $('#userEditId').value = user?.id || '';
+    $('#userUsername').value = user?.username || '';
+    $('#userUsername').disabled = !!user;
+    $('#userPassword').value = '';
+    $('#userRole').value = user?.role || 'viewer';
+    // Hide password field when editing (we only allow role changes)
+    $('#passwordField').classList.toggle('hidden', !!user);
+    $('#userPassword').required = !user;
+    $('#userModalOverlay').classList.add('show');
+    setTimeout(() => (user ? $('#userRole') : $('#userUsername')).focus(), 100);
+  };
+  const closeUserModal = () => { $('#userModalOverlay').classList.remove('show'); editingUserId = null; };
+
   // ========================================
-  //  Toast
+  //  Firestore subscriptions (after login)
   // ========================================
-  const showToast = (msg, type = 'success') => {
-    const el = $('#toast');
-    el.textContent = msg;
-    el.className = `toast ${type} show`;
-    clearTimeout(el._t);
-    el._t = setTimeout(() => el.classList.remove('show'), 2800);
+  const subscribeData = () => {
+    if (devicesUnsub) devicesUnsub();
+    if (usersUnsub) usersUnsub();
+
+    const liveDevices = query(devicesCol, orderBy('createdAt', 'desc'));
+    devicesUnsub = onSnapshot(
+      liveDevices,
+      (snapshot) => {
+        devices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        isLoading = false;
+        const fromCache = snapshot.metadata.fromCache;
+        setCloudStatus(fromCache ? 'offline' : 'online', fromCache ? 'يعمل محلياً (بدون إنترنت)' : 'متصل بالسحابة');
+        renderStats();
+        renderDevices();
+      },
+      (err) => {
+        isLoading = false;
+        setCloudStatus('error', 'خطأ في الاتصال');
+        devicesContainer.innerHTML = `
+          <div class="empty-state">
+            <h3 style="color:var(--danger)">تعذّر تحميل الأجهزة</h3>
+            <p>${escapeHtml(err.message || '')}</p>
+          </div>`;
+      }
+    );
+
+    if (can.manageUsers()) {
+      usersUnsub = onSnapshot(
+        query(usersCol, orderBy('createdAt', 'asc')),
+        (snapshot) => {
+          users = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          renderUsers();
+        },
+        (err) => {
+          usersContainer.innerHTML = `
+            <div class="empty-state">
+              <h3 style="color:var(--danger)">تعذّر تحميل المستخدمين</h3>
+              <p>${escapeHtml(err.message || '')}</p>
+            </div>`;
+        }
+      );
+    }
   };
 
   // ========================================
-  //  Firestore CRUD
-  // ========================================
-  const liveQuery = query(devicesCol, orderBy('createdAt', 'desc'));
-  onSnapshot(
-    liveQuery,
-    (snapshot) => {
-      devices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      isLoading = false;
-      const fromCache = snapshot.metadata.fromCache;
-      setCloudStatus(fromCache ? 'offline' : 'online', fromCache ? 'يعمل محلياً (بدون إنترنت)' : 'متصل بالسحابة');
-      renderAll();
-    },
-    (err) => {
-      console.error(err);
-      isLoading = false;
-      setCloudStatus('error', 'خطأ في الاتصال');
-      container.innerHTML = `
-        <div class="empty-state">
-          <h3 style="color:var(--danger)">تعذّر الاتصال بقاعدة البيانات</h3>
-          <p>${escapeHtml(err.message || '')}</p>
-          <p style="margin-top:12px">تأكد من تفعيل Firestore Database من لوحة تحكم Firebase.</p>
-        </div>`;
-    }
-  );
-
-  // ========================================
-  //  Form submit
+  //  Device form submit
   // ========================================
   $('#deviceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!can.add() && !editingId) { showToast('ليس لديك صلاحية الإضافة', 'error'); return; }
+    if (editingId && !can.edit()) { showToast('ليس لديك صلاحية التعديل', 'error'); return; }
+
     const data = {
       name: $('#deviceName').value.trim(),
       type: $('#deviceType').value,
@@ -756,7 +1144,8 @@
       purchaseDate: $('#purchaseDate').value,
       warrantyEnd: $('#warrantyEnd').value,
       employee: $('#employeeName').value.trim(),
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
+      updatedByUsername: currentProfile.username
     };
     if (new Date(data.warrantyEnd) < new Date(data.purchaseDate)) {
       showToast('تاريخ انتهاء الضمان يجب أن يكون بعد تاريخ الشراء', 'error');
@@ -766,13 +1155,14 @@
     const saveBtn = $('#saveBtn');
     saveBtn.disabled = true;
     saveBtn.textContent = 'جاري الحفظ...';
-
     try {
       if (editingId) {
         await updateDoc(doc(db, 'devices', editingId), data);
         showToast('تم تحديث بيانات الجهاز ☁️', 'success');
       } else {
         data.createdAt = serverTimestamp();
+        data.createdByUsername = currentProfile.username;
+        data.createdByUid = currentUser.uid;
         await addDoc(devicesCol, data);
         showToast('تمت إضافة الجهاز وحفظه على السحابة ☁️', 'success');
       }
@@ -785,14 +1175,15 @@
     }
   });
 
-  // Event delegation for edit/delete buttons
-  container.addEventListener('click', async (e) => {
+  // Device card actions
+  devicesContainer.addEventListener('click', async (e) => {
     const editBtn = e.target.closest('[data-edit]');
     const delBtn = e.target.closest('[data-delete]');
-    if (editBtn) {
+    if (editBtn && !editBtn.disabled) {
       const d = devices.find(x => x.id === editBtn.dataset.edit);
       if (d) openModal(d);
-    } else if (delBtn) {
+    } else if (delBtn && !delBtn.disabled) {
+      if (!can.delete()) { showToast('فقط الأدمن يمكنه الحذف', 'error'); return; }
       const d = devices.find(x => x.id === delBtn.dataset.delete);
       if (!d) return;
       if (!confirm(`هل تريد حذف الجهاز "${d.name}"؟`)) return;
@@ -806,16 +1197,116 @@
   });
 
   // ========================================
+  //  User form submit (creates real Firebase Auth user)
+  // ========================================
+  $('#userForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!can.manageUsers()) return;
+
+    const username = $('#userUsername').value.trim().toLowerCase();
+    const password = $('#userPassword').value;
+    const role = $('#userRole').value;
+
+    if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+      showToast('اسم المستخدم: حروف لاتينية وأرقام فقط', 'error');
+      return;
+    }
+
+    const saveBtn = $('#userSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = editingUserId ? 'جاري التحديث...' : 'جاري الإنشاء...';
+
+    try {
+      if (editingUserId) {
+        // Edit: only update role in Firestore
+        await updateDoc(doc(db, 'users', editingUserId), {
+          role,
+          updatedAt: serverTimestamp()
+        });
+        showToast('تم تحديث صلاحية المستخدم', 'success');
+        closeUserModal();
+      } else {
+        // Create: must use a SECONDARY app instance so the admin's session
+        // doesn't get replaced when the new user is auto-signed-in
+        const email = usernameToEmail(username);
+
+        // Check if username already exists in Firestore
+        const existing = await getDocs(query(usersCol, where('username', '==', username)));
+        if (!existing.empty) {
+          throw new Error('اسم المستخدم موجود بالفعل');
+        }
+
+        const secondaryApp = initializeApp(firebaseConfig, 'Secondary_' + Date.now());
+        const secondaryAuth = getAuth(secondaryApp);
+        try {
+          const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+          const newUid = cred.user.uid;
+          await signOut(secondaryAuth);
+          await deleteApp(secondaryApp);
+
+          // Save profile in Firestore (doc id = uid)
+          await setDoc(doc(db, 'users', newUid), {
+            username,
+            email,
+            role,
+            createdAt: serverTimestamp(),
+            createdByUsername: currentProfile.username
+          });
+          showToast(`تم إنشاء المستخدم "${username}" بنجاح ☁️`, 'success');
+          closeUserModal();
+        } catch (innerErr) {
+          await deleteApp(secondaryApp).catch(() => {});
+          throw innerErr;
+        }
+      }
+    } catch (err) {
+      let msg = err.message || 'حدث خطأ';
+      if (err.code === 'auth/email-already-in-use') msg = 'هذا المستخدم مسجل بالفعل في Firebase';
+      else if (err.code === 'auth/weak-password') msg = 'كلمة المرور ضعيفة (6 أحرف على الأقل)';
+      else if (err.code === 'auth/operation-not-allowed') msg = 'يجب تفعيل Email/Password في Firebase Authentication';
+      showToast('خطأ: ' + msg, 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'حفظ';
+    }
+  });
+
+  // User card actions
+  usersContainer.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('[data-user-edit]');
+    const delBtn = e.target.closest('[data-user-delete]');
+    if (editBtn && !editBtn.disabled) {
+      const u = users.find(x => x.id === editBtn.dataset.userEdit);
+      if (u) openUserModal(u);
+    } else if (delBtn && !delBtn.disabled) {
+      const u = users.find(x => x.id === delBtn.dataset.userDelete);
+      if (!u) return;
+      if (!confirm(`هل تريد حذف المستخدم "${u.username}"؟\n\nملاحظة: سيتم حذف الصلاحية فقط من النظام، لكن الحساب سيظل في Firebase Authentication. لحذفه نهائياً عليك حذفه يدوياً من لوحة Firebase.`)) return;
+      try {
+        await deleteDoc(doc(db, 'users', u.id));
+        showToast('تم حذف صلاحية المستخدم', 'success');
+      } catch (err) {
+        showToast('فشل الحذف: ' + err.message, 'error');
+      }
+    }
+  });
+
+  // ========================================
   //  Toolbar Events
   // ========================================
   $('#addBtn').addEventListener('click', () => openModal());
+  $('#addUserBtn').addEventListener('click', () => openUserModal());
   $('#modalClose').addEventListener('click', closeModal);
   $('#cancelBtn').addEventListener('click', closeModal);
-  $('#modalOverlay').addEventListener('click', (e) => {
-    if (e.target.id === 'modalOverlay') closeModal();
-  });
+  $('#userModalClose').addEventListener('click', closeUserModal);
+  $('#userCancelBtn').addEventListener('click', closeUserModal);
+  $('#modalOverlay').addEventListener('click', (e) => { if (e.target.id === 'modalOverlay') closeModal(); });
+  $('#userModalOverlay').addEventListener('click', (e) => { if (e.target.id === 'userModalOverlay') closeUserModal(); });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && $('#modalOverlay').classList.contains('show')) closeModal();
+    if (e.key === 'Escape') {
+      if ($('#modalOverlay').classList.contains('show')) closeModal();
+      if ($('#userModalOverlay').classList.contains('show')) closeUserModal();
+    }
   });
 
   $('#searchInput').addEventListener('input', (e) => {
@@ -831,9 +1322,7 @@
     renderDevices();
   });
 
-  // ========================================
-  //  Export / Import (cloud-aware)
-  // ========================================
+  // Export / Import
   $('#exportBtn').addEventListener('click', () => {
     const exportData = devices.map(({ id, ...rest }) => rest);
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -845,8 +1334,10 @@
     URL.revokeObjectURL(url);
     showToast('تم تصدير البيانات', 'success');
   });
-
-  $('#importBtn').addEventListener('click', () => $('#importInput').click());
+  $('#importBtn').addEventListener('click', () => {
+    if (!can.import()) { showToast('فقط الأدمن يمكنه الاستيراد', 'error'); return; }
+    $('#importInput').click();
+  });
   $('#importInput').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -855,15 +1346,19 @@
       const imported = JSON.parse(text);
       if (!Array.isArray(imported)) throw new Error('صيغة الملف غير صحيحة');
       if (!confirm(`سيتم رفع ${imported.length} جهاز إلى السحابة. هل تريد المتابعة؟`)) {
-        e.target.value = '';
-        return;
+        e.target.value = ''; return;
       }
       showToast('جاري الرفع إلى السحابة...', 'success');
       const batch = writeBatch(db);
       imported.forEach((d) => {
         const ref = doc(devicesCol);
         const { id, createdAt, updatedAt, ...rest } = d;
-        batch.set(ref, { ...rest, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+        batch.set(ref, {
+          ...rest,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          createdByUsername: currentProfile.username
+        });
       });
       await batch.commit();
       showToast(`تم استيراد ${imported.length} جهاز ☁️`, 'success');
@@ -871,6 +1366,129 @@
       showToast('ملف غير صالح: ' + err.message, 'error');
     }
     e.target.value = '';
+  });
+
+  // ========================================
+  //  Authentication
+  // ========================================
+  const showLogin = () => {
+    $('#loginOverlay').classList.remove('hidden');
+    $('#appContainer').classList.add('hidden');
+  };
+  const showApp = () => {
+    $('#loginOverlay').classList.add('hidden');
+    $('#appContainer').classList.remove('hidden');
+  };
+
+  const ensureAdminBootstrap = async (username, password) => {
+    // If trying to log in as 'admin' but the account doesn't exist yet,
+    // create it on the fly with default credentials.
+    if (username !== 'admin' || password !== 'admin123') return false;
+    try {
+      const email = usernameToEmail('admin');
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        username: 'admin',
+        email,
+        role: 'admin',
+        createdAt: serverTimestamp(),
+        createdByUsername: 'system'
+      });
+      return true;
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') return false;
+      throw err;
+    }
+  };
+
+  $('#loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = $('#loginUsername').value.trim().toLowerCase();
+    const password = $('#loginPassword').value;
+    const errorEl = $('#loginError');
+    errorEl.classList.remove('show');
+
+    const btn = $('#loginBtn');
+    btn.disabled = true;
+    btn.textContent = 'جاري الدخول...';
+
+    try {
+      const email = usernameToEmail(username);
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (err) {
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
+          // Try to bootstrap admin
+          const bootstrapped = await ensureAdminBootstrap(username, password);
+          if (bootstrapped) {
+            // Already signed in by createUser
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
+    } catch (err) {
+      let msg = 'بيانات الدخول غير صحيحة';
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') msg = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+      else if (err.code === 'auth/user-not-found') msg = 'المستخدم غير موجود';
+      else if (err.code === 'auth/too-many-requests') msg = 'محاولات كثيرة جداً، حاول لاحقاً';
+      else if (err.code === 'auth/network-request-failed') msg = 'لا يوجد اتصال بالإنترنت';
+      else if (err.code === 'auth/operation-not-allowed') msg = 'يجب تفعيل Email/Password Authentication من لوحة Firebase';
+      else if (err.code === 'auth/configuration-not-found') msg = 'لم يتم تفعيل Authentication في Firebase. افتح الإعدادات وفعّل Email/Password';
+      else if (err.message) msg = err.message;
+      errorEl.textContent = msg;
+      errorEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'دخول';
+    }
+  });
+
+  $('#logoutBtn').addEventListener('click', async () => {
+    if (!confirm('هل تريد تسجيل الخروج؟')) return;
+    if (devicesUnsub) { devicesUnsub(); devicesUnsub = null; }
+    if (usersUnsub) { usersUnsub(); usersUnsub = null; }
+    devices = []; users = []; currentProfile = null;
+    await signOut(auth);
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      currentUser = null;
+      currentProfile = null;
+      showLogin();
+      return;
+    }
+    currentUser = user;
+    // Load profile
+    try {
+      const profSnap = await getDoc(doc(db, 'users', user.uid));
+      if (profSnap.exists()) {
+        currentProfile = profSnap.data();
+      } else {
+        // No profile — fallback minimal
+        currentProfile = {
+          username: emailToUsername(user.email),
+          email: user.email,
+          role: 'viewer'
+        };
+      }
+      applyPermissionsUI();
+      showApp();
+      switchTab('devices');
+      isLoading = true;
+      devicesContainer.innerHTML = `
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>جاري تحميل البيانات من السحابة...</p>
+        </div>`;
+      subscribeData();
+    } catch (err) {
+      showToast('خطأ في تحميل ملف المستخدم: ' + err.message, 'error');
+      await signOut(auth);
+    }
   });
 
   // ========================================
@@ -894,7 +1512,6 @@
     showToast('تم تثبيت التطبيق بنجاح', 'success');
   });
 
-  // Service worker
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(() => {});
