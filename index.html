@@ -564,7 +564,7 @@
       <span class="user-chip" id="userChip">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span id="userName">—</span>
-        <span class="role-tag role-viewer" id="userRole">viewer</span>
+        <span class="role-tag role-viewer" id="userRoleTag">viewer</span>
       </span>
       <button class="btn btn-ghost" id="logoutBtn" title="تسجيل الخروج">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -805,6 +805,7 @@
   let isLoading = true;
   let devicesUnsub = null;
   let usersUnsub = null;
+  let profileUnsub = null;
   let currentTab = 'devices';
 
   // ========================================
@@ -1021,8 +1022,7 @@
     $('#usersTabBtn').classList.toggle('hidden', !can.manageUsers());
 
     $('#userName').textContent = currentProfile.username;
-    const roleEl = $('#userRole');
-    const roleTag = $('#userChip .role-tag');
+    const roleTag = $('#userRoleTag');
     roleTag.textContent = roleLabels[currentProfile.role] || currentProfile.role;
     roleTag.className = `role-tag role-${currentProfile.role}`;
   };
@@ -1450,45 +1450,91 @@
     if (!confirm('هل تريد تسجيل الخروج؟')) return;
     if (devicesUnsub) { devicesUnsub(); devicesUnsub = null; }
     if (usersUnsub) { usersUnsub(); usersUnsub = null; }
+    if (profileUnsub) { profileUnsub(); profileUnsub = null; }
     devices = []; users = []; currentProfile = null;
     await signOut(auth);
   });
 
-  onAuthStateChanged(auth, async (user) => {
+  // Live profile listener — handles race conditions on first login
+  // and applies role changes instantly without a re-login
+  const subscribeProfile = (user) => {
+    if (profileUnsub) profileUnsub();
+    let firstLoad = true;
+    profileUnsub = onSnapshot(
+      doc(db, 'users', user.uid),
+      async (snap) => {
+        if (!snap.exists()) {
+          // No profile yet — for the bootstrap admin, create it on the fly
+          if (user.email === usernameToEmail('admin')) {
+            try {
+              await setDoc(doc(db, 'users', user.uid), {
+                username: 'admin',
+                email: user.email,
+                role: 'admin',
+                createdAt: serverTimestamp(),
+                createdByUsername: 'system'
+              });
+            } catch {}
+            return; // onSnapshot will fire again with the new doc
+          }
+          // Other users without a profile: minimal viewer fallback
+          currentProfile = {
+            username: emailToUsername(user.email),
+            email: user.email,
+            role: 'viewer'
+          };
+        } else {
+          const data = snap.data();
+          currentProfile = {
+            username: data.username || emailToUsername(user.email),
+            email: data.email || user.email,
+            role: data.role || 'viewer'
+          };
+        }
+
+        applyPermissionsUI();
+
+        if (firstLoad) {
+          firstLoad = false;
+          showApp();
+          switchTab('devices');
+          isLoading = true;
+          devicesContainer.innerHTML = `
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <p>جاري تحميل البيانات من السحابة...</p>
+            </div>`;
+          subscribeData();
+        } else {
+          // Role might have changed live — re-render lists with new permissions
+          renderDevices();
+          renderUsers();
+          // Re-subscribe to users collection if access changed
+          if (can.manageUsers() && !usersUnsub) subscribeData();
+          if (!can.manageUsers() && usersUnsub) {
+            usersUnsub(); usersUnsub = null;
+            users = [];
+          }
+        }
+      },
+      (err) => {
+        showToast('خطأ في تحميل ملف المستخدم: ' + err.message, 'error');
+      }
+    );
+  };
+
+  onAuthStateChanged(auth, (user) => {
     if (!user) {
       currentUser = null;
       currentProfile = null;
+      if (profileUnsub) { profileUnsub(); profileUnsub = null; }
+      if (devicesUnsub) { devicesUnsub(); devicesUnsub = null; }
+      if (usersUnsub) { usersUnsub(); usersUnsub = null; }
       showLogin();
       return;
     }
     currentUser = user;
-    // Load profile
-    try {
-      const profSnap = await getDoc(doc(db, 'users', user.uid));
-      if (profSnap.exists()) {
-        currentProfile = profSnap.data();
-      } else {
-        // No profile — fallback minimal
-        currentProfile = {
-          username: emailToUsername(user.email),
-          email: user.email,
-          role: 'viewer'
-        };
-      }
-      applyPermissionsUI();
-      showApp();
-      switchTab('devices');
-      isLoading = true;
-      devicesContainer.innerHTML = `
-        <div class="loading-state">
-          <div class="spinner"></div>
-          <p>جاري تحميل البيانات من السحابة...</p>
-        </div>`;
-      subscribeData();
-    } catch (err) {
-      showToast('خطأ في تحميل ملف المستخدم: ' + err.message, 'error');
-      await signOut(auth);
-    }
+    subscribeProfile(user);
   });
 
   // ========================================
